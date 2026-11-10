@@ -1,0 +1,55 @@
+services:
+  app:
+    build: .
+    container_name: hvacdocparse_app
+    ports:
+      - "8108:8108"
+    environment:
+      APP_NAME: HvacDocParse
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8108
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: hvacdocparse
+      DB_USERNAME: hvac
+      DB_PASSWORD: secret
+      CACHE_STORE: database
+      SESSION_DRIVER: database
+      QUEUE_CONNECTION: database
+    volumes:
+      - ./storage:/var/www/html/storage
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.4
+    container_name: hvacdocparse_mysql
+    environment:
+      MYSQL_DATABASE: hvacdocparse
+      MYSQL_USER: hvac
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: rootsecret
+    ports:
+      - "33088:3306"
+    volumes:
+      - hvacdocparse_mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-prootsecret"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: hvacdocparse_redis
+    ports:
+      - "6388:6379"
+    restart: unless-stopped
+
+volumes:
+  hvacdocparse_mysql:
